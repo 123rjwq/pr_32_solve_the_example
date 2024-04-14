@@ -1,0 +1,124 @@
+package com.example.rom_kir_pr_32_solve_the_example
+
+import android.os.Bundle
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import kotlin.random.Random
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var exampleTextView: TextView
+    private lateinit var answerEditText: EditText
+    private lateinit var startButton: Button
+    private lateinit var checkButton: Button
+    private lateinit var statisticsTextView: TextView
+    private lateinit var resetButton: Button
+    private lateinit var nextButton: Button
+
+    private var correctAnswers = 0
+    private var totalAnswers = 0
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        exampleTextView = findViewById(R.id.questionTextView)
+        answerEditText = findViewById(R.id.answerEditText)
+        startButton = findViewById(R.id.startButton)
+        checkButton = findViewById(R.id.checkButton)
+        statisticsTextView = findViewById(R.id.statisticsTextView)
+        resetButton = findViewById(R.id.resetButton)
+        nextButton = findViewById(R.id.nextButton)
+        answerEditText.isEnabled = false
+        startButton.setOnClickListener { generateExample() }
+        checkButton.setOnClickListener { checkAnswer() }
+        resetButton.setOnClickListener { resetStatistics() }
+        nextButton.setOnClickListener { generateExample() }
+    }
+
+    private fun generateExample() {
+        answerEditText.setBackgroundColor(android.graphics.Color.WHITE)
+        val firstNumber = Random.nextInt(10, 99)
+        var secondNumber = Random.nextInt(10, 99)
+
+        // Проверяем, что secondNumber является делителем firstNumber
+        while (firstNumber % secondNumber != 0)
+        {
+            secondNumber = Random.nextInt(10, 99)
+        }
+
+        val operator = when (Random.nextInt(0, 4)) {
+            0 -> "*"
+            1 -> "/"
+            2 -> "-"
+            else -> "+"
+        }
+
+        val example = when (operator) {
+            "*" -> "$firstNumber * $secondNumber"
+            "/" -> "$firstNumber / $secondNumber"
+            "-" -> "$firstNumber - $secondNumber"
+            else -> "$firstNumber + $secondNumber"
+        }
+        exampleTextView.text = example
+        answerEditText.setText("")
+        answerEditText.isEnabled = true
+        checkButton.isEnabled = true
+        startButton.isEnabled = false
+    }
+
+    private fun checkAnswer() {
+        val answer = answerEditText.text.toString().toDoubleOrNull()
+        var correctAnswer = 0
+
+        if (answer != null) {
+            val question = answerEditText.text.toString()
+            val correctAnswer_ = when (question.last()) {
+                '+' -> question.substringBeforeLast(" + ").toDouble() + question.substringAfterLast(" + ").toDouble()
+                '-' -> question.substringBeforeLast(" - ").toDouble() - question.substringAfterLast(" - ").toDouble()
+                '*' -> question.substringBeforeLast(" * ").toDouble() * question.substringAfterLast(" * ").toDouble()
+                '/' -> question.substringBeforeLast(" / ").toDouble() / question.substringAfterLast(" / ").toDouble()
+                else -> 0.0
+            }
+
+            val example = exampleTextView.text.toString()
+            val correctExampleAnswer  = when (example.first()) {
+                '*' -> example.substring(0, example.indexOf('*')).toDouble() * example.substring(example.indexOf('*') + 1).toDouble()
+                '/' -> example.substring(0, example.indexOf('/')).toDouble() / example.substring(example.indexOf('/') + 1).toDouble()
+                '-' -> example.substring(0, example.indexOf('-')).toDouble() - example.substring(example.indexOf('-') + 1).toDouble()
+                else -> example.substring(0, example.indexOf('+')).toDouble() + example.substring(example.indexOf('+') + 1).toDouble()
+            }
+
+            if (correctAnswer_ == correctExampleAnswer ) {
+                exampleTextView.setBackgroundColor(android.graphics.Color.GREEN)
+                correctAnswer++
+            } else {
+                exampleTextView.setBackgroundColor(android.graphics.Color.RED)
+            }
+
+            totalAnswers++
+            updateStatistics()
+            answerEditText.isEnabled = false
+            checkButton.isEnabled = false
+            startButton.isEnabled = false
+            resetButton.isEnabled = true
+            nextButton.isEnabled = true
+        }
+    }
+
+    private fun resetStatistics() {
+        correctAnswers = 0
+        totalAnswers = 0
+        answerEditText.setBackgroundColor(android.graphics.Color.WHITE)
+        updateStatistics()
+    }
+
+    private fun updateStatistics() {
+        val percentage = if (totalAnswers > 0) (correctAnswers.toDouble() / totalAnswers * 100).toString().take(5) else 0
+        statisticsTextView.text = "Правильных ответов: $correctAnswers из $totalAnswers ($percentage%)"
+    }
+}
+
